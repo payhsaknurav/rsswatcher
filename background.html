@@ -1,0 +1,127 @@
+<html>
+<head>
+    <script src="jquery-1.4.4.js" type="text/javascript"></script>
+    <script type="text/javascript">
+    	 
+        $(document).ready(function(){ 
+			init();           
+	    	window.setInterval(init, 30000);
+        });
+
+		function init(){
+		    chrome.browserAction.setBadgeText({"text":".."});
+	            $.ajax({
+	                type:"GET",
+	                url: "http://www.techmeme.com/index.xml",
+	                dataType: "xml",
+	                success: parseXML
+	            });
+		}
+
+        function bootStrapLocalStore(){
+            alert("bootStrapping");
+            fetchRSS("http://www.techmeme.com/index.xml", initializeStore);
+        }
+
+        function initializeStore(xml){
+            alert("callback");
+            var highTime = 0; var epoch; var curTime = "";
+            $(xml).find("item").each(function(){
+               epoch = new Date($(this).children('pubDate').text())
+               curTime = epoch.getTime();
+               if(curTime > highTime)
+                    highTime = curTime
+            });
+            localStorage.setItem("highTime") = JSON.stringify(highTime);;
+        }
+
+        function fetchRSS(site, callback){
+            $.ajax({
+                type:"GET",
+                url: site,
+                dataType: "xml",
+                success: callback
+            });
+        }
+	
+		function customCompareFunc(a, b){
+			if(a.id > b.id){
+				return 1;
+			}else if(a.id < b.id){
+				return -1;
+			}else{
+				return 0;
+			}
+		}
+		
+        function parseXML(xml){
+            var index = 0;
+            var entries; var entry; var highTime = 0;
+            var epoch, lastTime, lowTime = 0;
+            
+			lastTime = JSON.parse(localStorage.getItem("lastTime")) || 0;
+	    	lowTime = lastTime;
+			
+			entries = localStorage.getItem("entries");
+			if(entries == "undefined" || entries == null){
+                console.log("Entries empty");
+                entries = new Array();
+            }else{     
+				console.log(entries);  
+				entries = JSON.parse(entries);    				             
+				console.log(entries.length + " entries already exist");
+            }
+            
+			$(xml).find("item").each(function(){
+                epoch = new Date($(this).children('pubDate').text()).getTime()
+                console.log(lastTime + " -- " + epoch);
+                if(epoch > lastTime){
+                    index++;
+                    
+					if(epoch < lowTime)
+                        lowTime = epoch;
+						
+					if(epoch > highTime)
+						highTime = epoch;
+
+                    entry = {
+						read: 0,
+						id: new Date($(this).children("pubDate").text()).getTime(),
+                        title : $(this).children("title").text(),
+                        link : $(this).children("link").text(),
+                        desc : $(this).children("description").text(),
+                    };
+					                    
+					entries.push(entry);						
+                }				
+             });
+			 
+			 if (index != 0) {
+			 	entries.sort(customCompareFunc);			 	
+			 	localStorage.setItem("entries", JSON.stringify(entries));
+			 	localStorage.setItem("lastTime", JSON.stringify(highTime));
+				localStorage.setItem("readTime", JSON.stringify(lowTime));
+				updateBadge();
+			 }else{
+				updateBadge(); 	
+			 }
+        }
+		
+		function updateBadge(){
+			entries = JSON.parse(localStorage.getItem("entries"));
+			var readTime = JSON.parse(localStorage.getItem("readTime"));
+			var unreadCount = 0;
+			entries.sort(customCompareFunc);
+			$(entries).each(function(index, entry){
+				if(entry.id > readTime){
+					unreadCount++;
+				}
+			});
+			console.log(new Date() + "Total:" + entries.length + " Unread:" + unreadCount);
+		 	chrome.browserAction.setBadgeText({"text": ""+unreadCount});
+		}
+</script>
+</head>
+<body>
+</body>
+</html>

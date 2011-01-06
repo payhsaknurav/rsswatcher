@@ -1,0 +1,78 @@
+<html>
+    <head>
+    <style type="text/css">
+        body{
+            font-family: "Arial" !important;
+            font-size: 12px;
+            width: 400px;
+            overflow-x: hidden;
+            color: #333333;
+            padding: 2px;
+        }
+
+        div.entry{
+            border-bottom: 1px solid #aeaeae;
+            margin-bottom: 5px;
+        }
+		
+		div.entry:hover{
+			background: #e8f3fe;
+		}
+
+        div.entry a{
+            text-decoration:none;
+            color: #333333;
+        }
+
+        div.title{
+            font-weight: bold;
+    	}
+
+	span.clr-btn{
+		font-family: "Arial" !important;
+		width:99%;
+		font-size: 12px !important;
+		padding: 5px;
+		color: #333333;
+		border: 1px solid #aeaeae;
+		background: #e5e5e5;
+		-webkit-border-radius: 3px;
+		cursor: hand;
+		margin-top: 5px; 
+				
+	}
+
+    </style>
+    <script src="jquery-1.4.4.min.js" type="text/javascript"></script>
+    <script type="text/javascript"> 
+        $(document).ready(function(){
+            var entries = JSON.parse(localStorage.getItem("entries"));
+            var entryHTML = "";
+            console.log(entries);
+
+            if(entries == null){
+                entryHTML = "<div><strong>Aawww.. Nothing to read right now</strong></div>";
+            }else{
+                $.each(entries, function(index, value){
+                    console.log(value);
+                    entryHTML += "<div class='entry' id='tw-"+ index +"'>";
+                    entryHTML += value.desc;
+                    entryHTML += "</div>";
+                });
+
+                entryHTML += "<span class='clr-btn' href='#'>Clear</span>"
+            }
+	    
+            $("body").html(entryHTML);
+            $("body").find("a").attr("target", "_blank");
+
+            $("span.clr-btn").click(function(){
+                $("body").html("<div><strong>Aawww.. Nothing to read right now</strong></div>");
+                localStorage.setItem("entries", null);
+                chrome.browserAction.setBadgeText({"text": ""});
+            });
+        });
+    </script>
+    </head>
+    <body></body>
+</html>
